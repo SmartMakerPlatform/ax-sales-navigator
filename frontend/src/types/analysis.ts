@@ -1,6 +1,7 @@
 export type Priority = "high" | "medium" | "low";
-export type ActionStatus = "suggested" | "selected" | "approved" | "deferred" | "completed";
-export type ActionExecutionMode = "manual" | "draft" | "schedule" | "record" | "research" | "custom";
+export type ActionStatus = "suggested" | "selected" | "approved" | "deferred" | "rejected" | "completed";
+export type ActionExecutionMode = "manual" | "draft" | "schedule" | "record" | "research" | "custom" | (string & {});
+export type ActionSource = "ai" | "user";
 
 export interface Evidence {
   speaker: "salesperson" | "customer" | "unknown";
@@ -19,8 +20,10 @@ export interface RecommendedAction {
   requiredInputs?: string[];
   expectedOutcome?: string;
   executionMode: ActionExecutionMode;
-  confidence: number;
+  confidence?: number | null;
   status: ActionStatus;
+  source?: ActionSource;
+  isModified?: boolean;
 }
 
 export interface PromiseItem {
@@ -36,7 +39,7 @@ export interface CallAnalysisResult {
   objections: string[];
   promises: PromiseItem[];
   itemsToVerify: string[];
-  salesStage: { code: string; label: string; reason: string; confidence: number };
+  salesStage: { code?: string | null; label?: string | null; reason?: string | null; confidence?: number | null };
   recommendedActions: RecommendedAction[];
   warnings: string[];
   analyzedAt: string;
@@ -48,4 +51,6 @@ export interface Scenario {
   description: string;
   transcript: string;
   result: CallAnalysisResult;
+  fileAliases?: string[];
+  mockBehavior?: "success" | "failure";
 }

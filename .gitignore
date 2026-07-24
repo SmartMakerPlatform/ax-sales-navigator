@@ -7,3 +7,4 @@ frontend/vite.config.d.ts
 *.log
 .env
 frontend/.env
+server/.env

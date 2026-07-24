@@ -2,6 +2,33 @@
 
 현재 API는 구현하지 않는다. 프론트엔드의 `SalesAnalysisService`를 교체할 때 사용할 예정 계약이다.
 
+## 음성 전사 (구현됨)
+
+```http
+POST /api/transcriptions
+Content-Type: multipart/form-data
+```
+
+입력:
+
+- `audio`: 60초 이하이면서 10MB 이하인 M4A, MP3 또는 WAV 파일
+
+성공 응답 `200 OK`는 Google 전용 응답이 아니라 프론트엔드 공통 `TranscriptionResult` 구조다.
+
+```json
+{
+  "transcript": "전사된 통화 내용",
+  "source": "stt",
+  "language": "ko-KR",
+  "confidence": 0.87,
+  "generatedAt": "2026-07-24T10:00:00.000Z"
+}
+```
+
+중계 서버가 Google Cloud Speech-to-Text V2의 `results`, `alternatives`, `metadata`를 위 구조로 변환한다. 브라우저에는 Google 인증 정보나 공급자 원본 응답을 전달하지 않는다.
+
+오류 응답은 `{ "code": string, "message": string }`이며 `400`(파일 없음), `413`(10MB 또는 60초 초과), `415`(지원하지 않는 형식), `422`(손상된 음성 또는 인식 결과 없음), `503`(공급자 설정/연결 오류)을 사용한다.
+
 ## 음성 업로드 및 분석
 
 ```http

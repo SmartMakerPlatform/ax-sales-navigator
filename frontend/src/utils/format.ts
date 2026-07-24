@@ -1,8 +1,8 @@
-import type { ActionExecutionMode, ActionStatus, Priority } from "../types/analysis";
+import type { ActionStatus, Priority } from "../types/analysis";
 
 export const priorityLabel: Record<Priority, string> = { high: "높음", medium: "보통", low: "낮음" };
-export const statusLabel: Record<ActionStatus, string> = { suggested: "AI 제안", selected: "선택됨", approved: "승인됨", deferred: "보류", completed: "완료" };
-export const modeMeta: Record<ActionExecutionMode, { icon: string; label: string }> = {
+export const statusLabel: Record<ActionStatus, string> = { suggested: "AI 제안", selected: "선택됨", approved: "승인됨", deferred: "보류됨", rejected: "거절됨", completed: "완료" };
+export const modeMeta: Record<string, { icon: string; label: string }> = {
   manual: { icon: "↗", label: "직접 수행" },
   draft: { icon: "✎", label: "초안 준비" },
   schedule: { icon: "◷", label: "일정 후보" },

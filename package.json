@@ -1,10 +1,26 @@
 {
   "name": "ax-sales-navigator",
   "private": true,
-  "workspaces": ["frontend"],
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "dev": "npm run dev --workspace frontend",
+    "dev": "concurrently --kill-others-on-fail --names relay,frontend --prefix-colors magenta,cyan \"npm:relay\" \"npm:dev:frontend\"",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "relay": "node server/index.mjs",
+    "test:server": "node --test server/*.test.mjs",
     "build": "npm run build --workspace frontend && node scripts/prepare-sites.mjs",
-    "preview": "npm run preview --workspace frontend"
+    "preview": "npm run preview --workspace frontend",
+    "start": "node server/index.mjs"
+  },
+  "dependencies": {
+    "@google-cloud/speech": "^7.5.0",
+    "express": "^5.2.1",
+    "ffmpeg-static": "^5.3.0",
+    "multer": "^2.2.0",
+    "music-metadata": "^11.14.0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
   }
 }
