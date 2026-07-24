@@ -1,0 +1,14 @@
+.git
+.github
+.openai
+node_modules
+frontend/node_modules
+frontend/dist
+dist
+*.log
+.env
+frontend/.env
+server/.env
+sample-data
+docs
+prompts

@@ -26,7 +26,7 @@ npm run preview
 
 ## GitHub Pages 배포
 
-`main` 브랜치에 push하면 `.github/workflows/deploy-pages.yml`이 Mock 프로토타입을 자동으로 빌드하고 GitHub Pages에 배포한다. 저장소의 `Settings → Pages → Build and deployment → Source`에서 `GitHub Actions`를 선택한다.
+`main` 브랜치에 push하면 `.github/workflows/deploy-pages.yml`이 프론트엔드를 자동으로 빌드하고 GitHub Pages에 배포한다. 저장소의 `Settings → Pages → Build and deployment → Source`에서 `GitHub Actions`를 선택한다.
 
 배포 주소:
 
@@ -34,7 +34,7 @@ npm run preview
 https://smartmakerplatform.github.io/ax-sales-navigator/
 ```
 
-GitHub Pages는 정적 호스팅이므로 배포본에서는 Mock 전사와 Mock 분석을 사용한다. 실제 Google Speech-to-Text는 로컬 중계 서버 또는 별도로 배포한 API 서버가 필요하다.
+GitHub Pages는 정적 화면을 제공하고 실제 Google Speech-to-Text 요청은 Cloud Run 중계 API가 처리한다. 저장소의 Actions 변수 `TRANSCRIPTION_API_BASE_URL`에 Cloud Run 서비스 URL을 설정하면 Pages 빌드가 실제 STT 모드로 전환된다. URL을 설정하기 전에는 Mock 전사로 안전하게 배포된다. 통화 분석은 아직 Mock 서비스를 사용한다. 배포 절차는 `docs/cloud-run-deployment.md`를 참고한다.
 
 ## Google Cloud Speech-to-Text V2 전사
 

@@ -44,7 +44,10 @@ export class GoogleTranscriptionService implements TranscriptionService {
     const body = new FormData();
     body.append("audio", input.audioFile);
 
-    const response = await fetch("/api/transcriptions", {
+    const apiBaseUrl = (import.meta.env.VITE_TRANSCRIPTION_API_BASE_URL ?? "")
+      .trim()
+      .replace(/\/+$/, "");
+    const response = await fetch(`${apiBaseUrl}/api/transcriptions`, {
       method: "POST",
       body,
     });

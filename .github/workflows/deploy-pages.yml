@@ -31,12 +31,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build mock prototype
+      - name: Build prototype
         run: npm run build --workspace frontend
         env:
           VITE_BASE_PATH: /ax-sales-navigator/
           VITE_ANALYSIS_PROVIDER: mock
-          VITE_TRANSCRIPTION_PROVIDER: mock
+          VITE_TRANSCRIPTION_PROVIDER: ${{ vars.TRANSCRIPTION_API_BASE_URL != '' && 'google' || 'mock' }}
+          VITE_TRANSCRIPTION_API_BASE_URL: ${{ vars.TRANSCRIPTION_API_BASE_URL }}
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

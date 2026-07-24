@@ -4,6 +4,7 @@ import express from "express";
 import multer from "multer";
 import { parseBuffer } from "music-metadata";
 import { normalizeAudioForTranscription } from "./audioNormalization.mjs";
+import { createCorsMiddleware } from "./cors.mjs";
 import { transcribeWithGoogle } from "./googleSpeechV2.mjs";
 
 if (typeof process.loadEnvFile === "function") {
@@ -15,7 +16,7 @@ if (typeof process.loadEnvFile === "function") {
 }
 
 const app = express();
-const port = Number(process.env.TRANSCRIPTION_RELAY_PORT || 8787);
+const port = Number(process.env.PORT || process.env.TRANSCRIPTION_RELAY_PORT || 8787);
 const maxAudioBytes = 10_000_000;
 const maxAudioSeconds = 60;
 const allowedExtensions = new Set([".m4a", ".mp3", ".wav"]);
@@ -23,6 +24,8 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { files: 1, fileSize: maxAudioBytes },
 });
+
+app.use(createCorsMiddleware(process.env.ALLOWED_ORIGINS));
 
 class HttpError extends Error {
   constructor(status, code, message) {
