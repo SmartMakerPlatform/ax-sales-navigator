@@ -1,0 +1,20 @@
+{
+  "analysisId": "analysis-001",
+  "summary": "대학 교육 담당자는 비전공 교직원 약 20명을 위한 AX 교육에 관심이 있으며 내부 검토용 과정안과 견적을 요청했습니다.",
+  "customerNeeds": ["비전공자 대상 AX 교육", "20명 기준 과정안과 견적"],
+  "objections": ["이번 분기 예산 미확정"],
+  "promises": [
+    { "owner": "salesperson", "description": "이틀 안에 과정안과 견적 전달", "dueDate": null },
+    { "owner": "customer", "description": "자료 검토 후 예산 담당자와 논의", "dueDate": null }
+  ],
+  "itemsToVerify": ["정확한 교육 인원", "교육 가능 일정", "예산 집행 가능 항목"],
+  "salesStage": { "code": "proposal_requested", "label": "제안서 요청", "reason": "내부 보고용 자료를 명시적으로 요청함", "confidence": 0.94 },
+  "recommendedActions": [
+    { "id": "p1", "label": "대학 맞춤형 교육과정 제안서 작성", "instruction": "비전공 교직원 20명 기준 과정안을 작성합니다.", "reason": "고객이 내부 보고용 과정안을 요청했습니다.", "priority": "high", "dueDate": null, "suggestedTiming": "2영업일 이내", "evidence": [{ "speaker": "customer", "quote": "내부 보고할 수 있는 과정안을 보내주세요." }], "requiredInputs": ["예상 교육 인원", "교육 가능 일정"], "expectedOutcome": "고객의 내부 검토 착수", "executionMode": "draft", "confidence": 0.94, "status": "suggested" },
+    { "id": "p2", "label": "예상 인원 기준 견적서 작성", "instruction": "20명 기준 견적과 인원 변동 조건을 준비합니다.", "reason": "고객이 인원 기준 견적을 요청했습니다.", "priority": "high", "dueDate": null, "suggestedTiming": "2영업일 이내", "executionMode": "draft", "confidence": 0.93, "status": "suggested" },
+    { "id": "p3", "label": "예산 집행 가능 항목 확인 요청", "instruction": "사용 가능한 예산 항목과 확정 예정일을 확인합니다.", "reason": "현재 예산이 미확정입니다.", "priority": "medium", "dueDate": null, "suggestedTiming": "자료 발송 시", "executionMode": "research", "confidence": 0.88, "status": "suggested" },
+    { "id": "p4", "label": "자료 발송 3일 후 후속 통화 등록", "instruction": "자료 발송일 기준 3일 뒤 검토 상황을 확인합니다.", "reason": "고객이 내부 검토 후 회신하기로 했습니다.", "priority": "medium", "dueDate": null, "suggestedTiming": "자료 발송 3일 후", "executionMode": "schedule", "confidence": 0.86, "status": "suggested" }
+  ],
+  "warnings": ["예산 확정일과 최종 교육 인원은 확인되지 않았습니다."],
+  "analyzedAt": "2026-07-24T10:00:00+09:00"
+}

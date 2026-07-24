@@ -1,0 +1,17 @@
+{
+  "analysisId": "analysis-002",
+  "summary": "현재 담당자는 교육 프로그램만 담당하며 시스템 도입 의사결정 권한은 없습니다.",
+  "customerNeeds": ["내부 전달이 쉬운 소개자료", "교육과 구축 제안의 구분"],
+  "objections": ["통화 상대에게 시스템 도입 권한 없음"],
+  "promises": [{ "owner": "salesperson", "description": "1페이지 소개자료 전달", "dueDate": null }],
+  "itemsToVerify": ["관련 부서 담당자", "시스템 도입 의사결정 절차"],
+  "salesStage": { "code": "stakeholder_mapping", "label": "의사결정자 탐색", "reason": "도입 권한을 가진 부서로 연결되어야 함", "confidence": 0.91 },
+  "recommendedActions": [
+    { "id": "d1", "label": "정보화 담당 부서 연결 요청", "instruction": "정보화 부서 또는 혁신사업단 담당자 소개를 요청합니다.", "reason": "현재 상대에게 도입 권한이 없습니다.", "priority": "high", "dueDate": null, "suggestedTiming": "소개자료 발송 시", "executionMode": "manual", "confidence": 0.92, "status": "suggested" },
+    { "id": "d2", "label": "시스템 도입 의사결정 구조 확인", "instruction": "검토·예산·최종 승인자의 역할을 확인합니다.", "reason": "승인 절차가 불명확합니다.", "priority": "high", "dueDate": null, "suggestedTiming": "다음 접촉 전", "executionMode": "research", "confidence": 0.87, "status": "suggested" },
+    { "id": "d3", "label": "교육 제안과 구축 제안을 분리하여 준비", "instruction": "두 제안을 독립적으로 검토할 수 있게 문서를 분리합니다.", "reason": "고객이 구분을 요청했습니다.", "priority": "medium", "dueDate": null, "suggestedTiming": "3영업일 이내", "executionMode": "draft", "confidence": 0.95, "status": "suggested" },
+    { "id": "d4", "label": "연결받을 담당자에게 전달할 1페이지 소개자료 작성", "instruction": "문제, 기대 효과, 범위, 다음 미팅 제안을 한 페이지로 정리합니다.", "reason": "관련 부서로 전달할 자료가 필요합니다.", "priority": "medium", "dueDate": null, "suggestedTiming": "2영업일 이내", "executionMode": "draft", "confidence": 0.9, "status": "suggested" }
+  ],
+  "warnings": ["최종 의사결정자와 예산 소유 부서는 확인되지 않았습니다."],
+  "analyzedAt": "2026-07-24T10:05:00+09:00"
+}

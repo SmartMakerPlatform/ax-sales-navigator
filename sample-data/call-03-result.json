@@ -1,0 +1,17 @@
+{
+  "analysisId": "analysis-003",
+  "summary": "고객은 이번 학기 예산과 운영 여력 부족으로 현재 도입을 거절했지만 겨울방학 또는 다음 연도 재검토 가능성은 있습니다.",
+  "customerNeeds": ["부담이 적은 체험 자료", "차기 예산 주기에 맞춘 재검토"],
+  "objections": ["현재 학기 예산 없음", "신규 교육 운영 여력 부족"],
+  "promises": [{ "owner": "salesperson", "description": "2시간 쇼케이스 자료 전달", "dueDate": null }],
+  "itemsToVerify": ["정확한 예산 편성 일정", "겨울방학 운영 가능 기간"],
+  "salesStage": { "code": "nurture_deferred", "label": "장기 보류", "reason": "현재 도입은 거절됐지만 차기 검토 가능성이 남아 있음", "confidence": 0.96 },
+  "recommendedActions": [
+    { "id": "r1", "label": "현재 거절 사유 기록", "instruction": "예산 부재와 운영 여력 부족을 고객 이력에 기록합니다.", "reason": "재접촉 시 거절 맥락을 보존해야 합니다.", "priority": "high", "dueDate": null, "suggestedTiming": "통화 직후", "executionMode": "record", "confidence": 0.98, "status": "suggested" },
+    { "id": "r2", "label": "겨울방학 재접촉 후보로 분류", "instruction": "자동 실행 없이 겨울방학 검토 후보로 분류합니다.", "reason": "고객이 겨울방학 재검토 가능성을 언급했습니다.", "priority": "medium", "dueDate": null, "suggestedTiming": "겨울방학 계획 수립 전", "executionMode": "record", "confidence": 0.9, "status": "suggested" },
+    { "id": "r3", "label": "차기 예산 편성 시기 확인", "instruction": "10월 예산 편성 시작일과 사전 검토 마감일을 확인합니다.", "reason": "예산 주기에 맞춰야 다음 연도 제안이 가능합니다.", "priority": "medium", "dueDate": null, "suggestedTiming": "9월 중", "executionMode": "research", "confidence": 0.89, "status": "suggested" },
+    { "id": "r4", "label": "부담이 적은 2시간 쇼케이스 자료 전달", "instruction": "도입 확정을 전제로 하지 않는 2시간 프로그램 개요를 전달합니다.", "reason": "고객이 자료 수신에만 동의했습니다.", "priority": "low", "dueDate": null, "suggestedTiming": "5영업일 이내", "executionMode": "draft", "confidence": 0.93, "status": "suggested" }
+  ],
+  "warnings": ["고객은 일정 등록이나 교육 확정에 동의하지 않았습니다."],
+  "analyzedAt": "2026-07-24T10:10:00+09:00"
+}
