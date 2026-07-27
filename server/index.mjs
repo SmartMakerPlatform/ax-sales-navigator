@@ -6,7 +6,10 @@ import { parseBuffer } from "music-metadata";
 import { normalizeAudioForTranscription } from "./audioNormalization.mjs";
 import { createCorsMiddleware } from "./cors.mjs";
 import { transcribeWithGoogle } from "./googleSpeechV2.mjs";
-import { createAnalysisHandler } from "./analysisHandler.mjs";
+import {
+  createAnalysisHandler,
+  isRequestBodyTooLargeError,
+} from "./analysisHandler.mjs";
 import { AnalysisError } from "./analysisContract.mjs";
 import { createOpenAIAnalysisService } from "./openAIAnalysis.mjs";
 import { createFixedWindowRateLimiter } from "./rateLimit.mjs";
@@ -129,6 +132,14 @@ app.get(/^(?!\/api\/).*/, (_request, response) => {
 });
 
 app.use((error, _request, response, _next) => {
+  if (isRequestBodyTooLargeError(error)) {
+    response.status(413).json({
+      code: "REQUEST_BODY_TOO_LARGE",
+      message: "분석 요청 본문이 허용된 크기를 초과했습니다.",
+    });
+    return;
+  }
+
   if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
     response.status(413).json({
       code: "AUDIO_TOO_LARGE",

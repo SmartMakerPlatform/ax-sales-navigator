@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createAnalysisHandler } from "./analysisHandler.mjs";
+import {
+  createAnalysisHandler,
+  isRequestBodyTooLargeError,
+} from "./analysisHandler.mjs";
 
 function invoke(handler, body) {
   return new Promise((resolve) => {
@@ -33,4 +36,12 @@ test("invalid analysis request never calls the provider", async () => {
   const { error } = await invoke(handler, { transcript: "짧음" });
   assert.equal(called, false);
   assert.equal(error.code, "TRANSCRIPT_TOO_SHORT");
+});
+
+test("Express payload limit errors are recognized", () => {
+  assert.equal(
+    isRequestBodyTooLargeError({ type: "entity.too.large", status: 413 }),
+    true,
+  );
+  assert.equal(isRequestBodyTooLargeError(new Error("other")), false);
 });

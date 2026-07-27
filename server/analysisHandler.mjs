@@ -1,5 +1,10 @@
 import { validateTranscript } from "./analysisContract.mjs";
 
+export const isRequestBodyTooLargeError = (error) =>
+  error?.type === "entity.too.large" ||
+  error?.status === 413 ||
+  error?.statusCode === 413;
+
 export function createAnalysisHandler(options) {
   const analyze = options.analyze;
   const minLength = Number(options.minLength ?? process.env.ANALYSIS_MIN_TRANSCRIPT_LENGTH ?? 20);
