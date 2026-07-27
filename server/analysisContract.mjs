@@ -51,9 +51,9 @@ const recommendedActionSchema = {
   type: "object",
   additionalProperties: false,
   properties: {
-    label: { type: "string", minLength: 1, maxLength: 100 },
-    instruction: { type: "string", minLength: 1, maxLength: 500 },
-    reason: { type: "string", minLength: 1, maxLength: 300 },
+    label: { type: "string", minLength: 1 },
+    instruction: { type: "string", minLength: 1 },
+    reason: { type: "string", minLength: 1 },
     priority: { type: "string", enum: [...priorities] },
     dueDate: { type: ["string", "null"] },
     suggestedTiming: { type: ["string", "null"] },
@@ -61,9 +61,9 @@ const recommendedActionSchema = {
     requiredInputs: {
       type: "array",
       maxItems: 8,
-      items: { type: "string", minLength: 1, maxLength: 120 },
+      items: { type: "string", minLength: 1 },
     },
-    expectedOutcome: { type: "string", minLength: 1, maxLength: 300 },
+    expectedOutcome: { type: "string", minLength: 1 },
     executionMode: { type: "string", enum: [...executionModes] },
     confidence: { type: "number", minimum: 0, maximum: 1 },
   },
@@ -210,6 +210,9 @@ function sanitizeRecommendedActions(value, transcript) {
     if (!label || !instruction || !reason || !expectedOutcome) {
       throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 필수 문구가 비어 있습니다.");
     }
+    if (label.length > 100 || instruction.length > 500 || reason.length > 300 || expectedOutcome.length > 300) {
+      throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무 문구가 허용 길이를 초과했습니다.");
+    }
     if (!priorities.has(item.priority) || !executionModes.has(item.executionMode) || !validConfidence(item.confidence)) {
       throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 우선순위, 실행 방식 또는 신뢰도가 올바르지 않습니다.");
     }
@@ -236,7 +239,7 @@ function sanitizeRecommendedActions(value, transcript) {
       dueDate,
       suggestedTiming,
       evidence,
-      requiredInputs: item.requiredInputs.map(cleanString).filter(Boolean),
+      requiredInputs: item.requiredInputs.map(cleanString).filter((value) => value && value.length <= 120),
       expectedOutcome,
       executionMode: item.executionMode,
       confidence: item.confidence,

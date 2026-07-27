@@ -57,6 +57,9 @@ export function mapOpenAIError(error) {
   if (status === 403 || status === 404 || code === "model_not_found") {
     return new AnalysisError(503, "OPENAI_MODEL_UNAVAILABLE", "분석 서버의 OpenAI 설정을 확인해 주세요.", error);
   }
+  if (name === "BadRequestError" || status === 400) {
+    return new AnalysisError(502, "OPENAI_REQUEST_INVALID", "AI 분석 요청 형식을 확인해 주세요.", error);
+  }
   return new AnalysisError(503, "OPENAI_PROVIDER_ERROR", "AI 분석 서비스에 연결하지 못했습니다.", error);
 }
 
@@ -80,6 +83,7 @@ export function createOpenAIAnalysisService(options = {}) {
             { role: "system", content: analysisInstructions },
             { role: "user", content: `다음 녹취록을 분석하세요.\n\n<transcript>\n${transcript}\n</transcript>` },
           ],
+          reasoning: { effort: "minimal" },
           text: {
             format: {
               type: "json_schema",
@@ -114,7 +118,7 @@ export function createOpenAIAnalysisService(options = {}) {
         };
       } catch (error) {
         const mapped = mapOpenAIError(error);
-        console.error(`[analysis] failed analysisId=${analysisId} transcriptLength=${transcript.length} code=${mapped.code} requestId=${error?.request_id ?? "unknown"}`);
+        console.error(`[analysis] failed analysisId=${analysisId} transcriptLength=${transcript.length} code=${mapped.code} providerStatus=${Number(error?.status) || "unknown"} providerName=${error?.name ?? "unknown"} providerCode=${error?.code ?? "unknown"} requestId=${error?.request_id ?? "unknown"}`);
         throw mapped;
       }
     },

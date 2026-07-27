@@ -111,3 +111,10 @@ test("OpenAI timeouts are mapped to a retryable timeout message", () => {
   assert.equal(error.code, "ANALYSIS_TIMEOUT");
   assert.equal(error.status, 504);
 });
+
+test("OpenAI bad requests are mapped without exposing provider details", () => {
+  const error = mapOpenAIError({ name: "BadRequestError", status: 400, message: "provider detail" });
+  assert.equal(error.code, "OPENAI_REQUEST_INVALID");
+  assert.equal(error.message, "AI 분석 요청 형식을 확인해 주세요.");
+  assert.equal(error.message.includes("provider detail"), false);
+});
