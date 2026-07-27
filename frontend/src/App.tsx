@@ -51,12 +51,7 @@ export default function App() {
         ? `실제 STT · ${file.name}`
         : `파일 매핑 · ${scenario.title}`
     : `샘플 · ${scenario.title}`;
-  const mockResultScenario = result?.provider === "mock"
-    ? scenarios.find((item) => item.result.analysisId === result.analysisId) ?? scenario
-    : undefined;
-  const recommendedActions = mockResultScenario && result
-    ? normalizeRecommendedActions(mockResultScenario.result.recommendedActions)
-    : [];
+  const recommendedActions = normalizeRecommendedActions(result?.recommendedActions);
 
   const clearAnalysis = () => {
     setResult(undefined);
@@ -155,8 +150,12 @@ export default function App() {
     }
   };
 
-  const selectAction = (action: RecommendedAction) =>
-    setSelected((items) => [...items, { ...action, source: "ai", status: "selected", isModified: false }]);
+  const selectAction = (action: RecommendedAction) => {
+    setSelected((items) => items.some((item) => item.id === action.id)
+      ? items
+      : [...items, { ...action, source: "ai", status: "selected", isModified: false }]);
+    setSaved(false);
+  };
   const updateAction = (updated: RecommendedAction) => {
     setSelected((items) => items.map((item) => item.id === updated.id ? updated : item));
     setSaved(false);
@@ -199,7 +198,7 @@ export default function App() {
         <div className="workspace-grid">
           <InputPanel file={file} scenarioId={scenarioId} transcript={transcript} transcriptionProvider={transcriptionProvider} loading={loading} analyzed={!!result} error={analysisError} sourceLabel={sourceLabel} onFile={changeFile} onScenario={changeScenario} onTranscript={(value) => { setTranscript((current) => ({ ...current, value, source: "user", status: "ready", isEdited: true, updatedAt: new Date().toISOString(), error: undefined })); setSaved(false); }} onAnalyze={analyze} onReset={reset} />
           <AnalysisPanel result={result} loading={loading} error={analysisError} provider={analysisProvider} onRetry={analyze} />
-          <ActionNavigation actions={recommendedActions} selected={selected} analyzed={!!result} analysisProvider={analysisProvider} saved={saved} onSelect={selectAction} onUpdate={updateAction} onAdd={addAction} onSave={save} />
+          <ActionNavigation actions={recommendedActions} selected={selected} analyzed={!!result} saved={saved} onSelect={selectAction} onUpdate={updateAction} onAdd={addAction} onSave={save} />
         </div>
         <details className="diagnostics">
           <summary>개발용 데이터 진단</summary>

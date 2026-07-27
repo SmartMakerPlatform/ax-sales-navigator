@@ -69,6 +69,7 @@ function isCallAnalysisResult(value: unknown): value is CallAnalysisResult {
     && Array.isArray(result.objections)
     && Array.isArray(result.promises)
     && Array.isArray(result.itemsToVerify)
+    && Array.isArray(result.recommendedActions)
     && Array.isArray(result.warnings)
   );
 }

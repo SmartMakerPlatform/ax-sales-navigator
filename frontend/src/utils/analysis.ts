@@ -89,6 +89,7 @@ export const normalizeAnalysisResult = (raw: CallAnalysisResult | MockAnalysisRe
     confidence: clampConfidence(raw?.salesStage?.confidence) ?? 0,
     evidence: normalizeEvidence(raw?.salesStage?.evidence),
   },
+  recommendedActions: normalizeRecommendedActions(raw?.recommendedActions),
   warnings: safeArray(raw?.warnings),
   analyzedAt: raw?.analyzedAt || new Date().toISOString(),
   provider: raw?.provider === "openai" ? "openai" : "mock",

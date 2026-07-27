@@ -27,6 +27,47 @@ const structured = {
     confidence: 0.92,
   }],
   itemsToVerify: [],
+  recommendedActions: [
+    {
+      label: "내부 검토용 과정안 작성",
+      instruction: "고객의 내부 검토에 사용할 과정안을 작성합니다.",
+      reason: "고객이 과정안을 요청했습니다.",
+      priority: "high",
+      dueDate: null,
+      suggestedTiming: "즉시",
+      evidence: [{ speaker: "customer", quote: "내부 검토용 과정안을 보내주세요." }],
+      requiredInputs: [],
+      expectedOutcome: "고객의 내부 검토 착수",
+      executionMode: "draft",
+      confidence: 0.95,
+    },
+    {
+      label: "과정안 전달 일정 등록",
+      instruction: "약속한 내일까지 과정안 전달 일정을 관리합니다.",
+      reason: "담당자가 내일까지 전달하기로 약속했습니다.",
+      priority: "high",
+      dueDate: null,
+      suggestedTiming: "내일까지",
+      evidence: [{ speaker: "salesperson", quote: "내일까지 전달하겠습니다." }],
+      requiredInputs: ["완성된 과정안"],
+      expectedOutcome: "자료 전달 약속 이행",
+      executionMode: "schedule",
+      confidence: 0.94,
+    },
+    {
+      label: "자료 전달 후 검토 여부 확인",
+      instruction: "과정안 전달 후 고객의 내부 검토 착수 여부를 확인합니다.",
+      reason: "자료 요청 이후의 후속 협의가 필요합니다.",
+      priority: "medium",
+      dueDate: null,
+      suggestedTiming: "자료 전달 후 2영업일 이내",
+      evidence: [{ speaker: "customer", quote: "내부 검토용 과정안을 보내주세요." }],
+      requiredInputs: [],
+      expectedOutcome: "후속 협의 시점 확인",
+      executionMode: "manual",
+      confidence: 0.8,
+    },
+  ],
   warnings: ["내일의 절대 날짜는 확인할 수 없습니다."],
 };
 
@@ -48,7 +89,9 @@ test("OpenAI success is transformed without exposing provider response fields", 
   assert.equal(result.model, "test-model");
   assert.equal(result.salesStage.label, "자료 요청");
   assert.equal("internal" in result, false);
-  assert.equal("recommendedActions" in result, false);
+  assert.equal(result.recommendedActions.length, 3);
+  assert.equal(result.recommendedActions[0].id, "action-1");
+  assert.equal(result.recommendedActions[0].status, "suggested");
 });
 
 test("malformed OpenAI text is reported as invalid structured output", async () => {

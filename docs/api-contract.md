@@ -73,6 +73,25 @@ Content-Type: application/json
     "confidence": 0.92,
     "evidence": [{ "speaker": "customer", "quote": "과정안을 보내주세요." }]
   },
+  "recommendedActions": [
+    {
+      "id": "action-1",
+      "label": "내부 검토용 과정안 작성",
+      "instruction": "고객 요청을 반영한 과정안을 작성합니다.",
+      "reason": "고객이 내부 검토용 과정안을 요청했습니다.",
+      "priority": "high",
+      "dueDate": null,
+      "suggestedTiming": "1영업일 이내",
+      "evidence": [{ "speaker": "customer", "quote": "과정안을 보내주세요." }],
+      "requiredInputs": ["교육 대상"],
+      "expectedOutcome": "고객의 내부 검토 착수",
+      "executionMode": "draft",
+      "confidence": 0.91,
+      "status": "suggested",
+      "source": "ai",
+      "isModified": false
+    }
+  ],
   "warnings": [],
   "analyzedAt": "2026-07-24T10:00:00+09:00",
   "provider": "openai",
@@ -80,4 +99,4 @@ Content-Type: application/json
 }
 ```
 
-`recommendedActions`는 이 응답에 포함하지 않는다. 오류 응답은 `{ "code": string, "message": string }` 구조이며 입력 누락·길이, 서버 설정, 사용 한도, 시간 초과, 거절, 구조화 결과 오류를 구분한다.
+실제 응답의 `recommendedActions`는 3~4개이며 분석과 같은 OpenAI 호출에서 생성된다. `id`, `status`, `source`, `isModified`는 서버가 공통 UI 모델로 변환하면서 추가한다. 오류 응답은 `{ "code": string, "message": string }` 구조이며 입력 누락·길이, 서버 설정, 사용 한도, 시간 초과, 거절, 구조화 결과 오류를 구분한다.

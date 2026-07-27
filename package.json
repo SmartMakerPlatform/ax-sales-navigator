@@ -5,6 +5,7 @@
     "frontend"
   ],
   "scripts": {
+    "test": "npm run test:server",
     "dev": "concurrently --kill-others-on-fail --names relay,frontend --prefix-colors magenta,cyan \"npm:relay\" \"npm:dev:frontend\"",
     "dev:frontend": "npm run dev --workspace frontend",
     "relay": "node server/index.mjs",

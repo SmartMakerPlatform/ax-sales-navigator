@@ -43,11 +43,55 @@ test("analysis normalization fixes stage labels and removes unmatched evidence",
     objections: [],
     promises: [],
     itemsToVerify: [],
+    recommendedActions: [
+      {
+        label: "내부 검토용 과정안 작성",
+        instruction: "고객이 내부 검토에 사용할 과정안을 작성합니다.",
+        reason: "고객이 과정안을 요청했습니다.",
+        priority: "high",
+        dueDate: null,
+        suggestedTiming: "1영업일 이내",
+        evidence: [{ speaker: "customer", quote: "내부 검토용 과정안을 보내주세요." }],
+        requiredInputs: ["교육 대상"],
+        expectedOutcome: "고객의 내부 검토 착수",
+        executionMode: "draft",
+        confidence: 0.92,
+      },
+      {
+        label: "교육 대상 확인",
+        instruction: "과정안에 반영할 교육 대상을 고객에게 확인합니다.",
+        reason: "과정안 작성에 필요한 대상 정보가 없습니다.",
+        priority: "medium",
+        dueDate: null,
+        suggestedTiming: "과정안 작성 전",
+        evidence: [{ speaker: "customer", quote: "내부 검토용 과정안을 보내주세요." }],
+        requiredInputs: [],
+        expectedOutcome: "과정안 작성 조건 확보",
+        executionMode: "manual",
+        confidence: 0.75,
+      },
+      {
+        label: "자료 전달 후 검토 일정 확인",
+        instruction: "과정안 전달 후 고객의 내부 검토 일정을 확인합니다.",
+        reason: "후속 협의를 위한 검토 일정이 필요합니다.",
+        priority: "low",
+        dueDate: null,
+        suggestedTiming: "자료 전달 후",
+        evidence: [{ speaker: "customer", quote: "내부 검토용 과정안을 보내주세요." }],
+        requiredInputs: [],
+        expectedOutcome: "후속 협의 일정 확보",
+        executionMode: "schedule",
+        confidence: 0.7,
+      },
+    ],
     warnings: [""],
   }, transcript);
 
   assert.equal(result.salesStage.label, salesStageLabels.materials_requested);
   assert.equal(result.customerNeeds[0].evidence.length, 0);
+  assert.equal(result.recommendedActions.length, 3);
+  assert.equal(result.recommendedActions[0].id, "action-1");
+  assert.equal(result.recommendedActions[0].status, "suggested");
   assert.deepEqual(result.warnings, []);
 });
 

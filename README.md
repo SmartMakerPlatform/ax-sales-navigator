@@ -4,7 +4,7 @@
 
 ## 현재 프로토타입 범위
 
-React + TypeScript + Vite 프론트엔드, Google Cloud Speech-to-Text V2 전사, OpenAI 기반 통화 분석, 8개 Mock 대조군, 동적 샘플 업무 카드, 실행 준비 편집, 승인·보류·거절, LocalStorage 저장을 포함합니다. 실제 OpenAI 연결 범위는 `STEP 02 · 분석 결과`이며 `STEP 03 · 업무 내비게이션`은 다음 개발 단계로 분리되어 있습니다.
+React + TypeScript + Vite 프론트엔드, Google Cloud Speech-to-Text V2 전사, OpenAI 기반 통화 분석과 동적 추천 업무, 8개 Mock 대조군, 업무 편집, 승인·보류·거절, LocalStorage 저장을 포함합니다. 실제 OpenAI 분석 한 번의 응답이 `STEP 02 · 분석 결과`와 `STEP 03 · 업무 내비게이션`을 함께 채웁니다.
 
 ## 실행
 
@@ -86,7 +86,7 @@ VITE_ANALYSIS_PROVIDER=openai
 VITE_ANALYSIS_API_BASE_URL=https://your-cloud-run-service.run.app
 ```
 
-분석 버튼은 파일명이나 시나리오 ID가 아니라 사용자가 마지막으로 수정한 textarea의 녹취록만 `POST /api/analyses`로 보낸다. 서버는 공식 OpenAI JavaScript SDK의 Responses API와 Structured Outputs JSON Schema를 사용하고, 공통 `CallAnalysisResult`로 변환한 뒤 영역 2에 표시한다. 근거 발언은 기본 접힘 상태의 `근거 보기`에서 확인할 수 있다.
+분석 버튼은 파일명이나 시나리오 ID가 아니라 사용자가 마지막으로 수정한 textarea의 녹취록만 `POST /api/analyses`로 보낸다. 서버는 공식 OpenAI JavaScript SDK의 Responses API와 Structured Outputs JSON Schema를 사용하고, 공통 `CallAnalysisResult`로 변환한 뒤 영역 2의 분석 결과와 영역 3의 추천 업무에 표시한다. 근거 발언은 기본 접힘 상태의 `근거 보기`에서 확인할 수 있다.
 
 API 키는 서버 전용 변수다. `frontend/.env`, `VITE_` 변수, GitHub Actions의 Pages 빌드 변수, 저장소 파일에 넣지 않는다. 자세한 흐름과 개인정보 주의사항은 `docs/analysis-flow.md`를 참고한다.
 
@@ -97,7 +97,7 @@ API 키는 서버 전용 변수다. `frontend/.env`, `VITE_` 변수, GitHub Acti
 1. 루트에서 개발 서버를 실행합니다.
 2. 왼쪽 `샘플 시나리오`에서 8개 대조군 중 하나를 선택하거나 음성 파일을 선택합니다.
 3. 녹취록을 필요에 따라 수정하고 `통화 분석 시작`을 누릅니다.
-4. 분석 결과의 추천 업무를 `실행 준비에 추가`합니다.
+4. 분석 결과의 추천 업무를 `업무 추가`합니다.
 5. 업무명, 지시, 우선순위, 기한, 필요 자료를 수정합니다.
 6. 필요한 업무만 승인하고 LocalStorage에 저장합니다.
 
@@ -111,15 +111,15 @@ UI는 `SalesAnalysisService` 인터페이스만 사용합니다. 기본값은 `M
 
 음성에서 녹취 결과를 만드는 단계는 별도의 `TranscriptionService` 인터페이스로 분리되어 있습니다. `VITE_TRANSCRIPTION_PROVIDER=mock`이면 기존 `MockTranscriptionService`, `google`이면 `GoogleTranscriptionService`를 사용합니다. Google 인증과 공급자 원본 응답은 `server/` 중계 계층에만 존재합니다.
 
-Mock 분석 모드의 추천 업무명은 컴포넌트에 고정되어 있지 않습니다. 샘플 데이터의 자유 문자열 `label`, `instruction`, `reason`을 공통 카드가 렌더링합니다. OpenAI 실제 분석 결과에는 추천 업무가 포함되지 않으며 영역 3은 `다음 단계에서 연결 예정`으로 표시됩니다.
+Mock과 OpenAI 분석 모드 모두 추천 업무명을 컴포넌트에 고정하지 않습니다. 각 분석 응답의 자유 문자열 `recommendedActions[].label`, `instruction`, `reason`을 같은 공통 카드가 렌더링합니다.
 
 ## 저장 데이터
 
-현재 검토 workspace는 브라우저의 `ax-sales-navigator:workspace` 키에 버전 3으로 저장됩니다. 녹취 값·출처·수정 여부, 분석 결과, 업무별 상태, AI 추천 수정 업무, 사용자 추가 업무와 저장 시각이 포함됩니다. 호환되지 않는 이전 workspace 데이터는 안전하게 초기화합니다.
+현재 검토 workspace는 브라우저의 `ax-sales-navigator:workspace` 키에 버전 4로 저장됩니다. 녹취 값·출처·수정 여부, 분석 결과, 업무별 상태, AI 추천 수정 업무, 사용자 추가 업무와 저장 시각이 포함됩니다. 호환되지 않는 이전 workspace 데이터는 안전하게 초기화합니다.
 
 ## 현재 구현하지 않은 기능
 
-OpenAI 기반 다음 업무 생성·실행, FastAPI, 서버 데이터베이스, 로그인·권한, 이메일 발송, 캘린더 등록, 제안서 자동 생성, 고객별 통화 이력은 구현하지 않았습니다. OpenAI API 키가 없는 환경에서는 실제 분석 성공 호출을 검증할 수 없으며 Mock 분석을 사용해야 합니다.
+추천 업무의 서버·DB 영구 저장과 자동 실행, FastAPI, 로그인·권한, 이메일 발송, 캘린더 등록, 제안서 자동 생성, 고객별 통화 이력은 구현하지 않았습니다. OpenAI API 키가 없는 환경에서는 실제 분석 성공 호출을 검증할 수 없으며 Mock 분석을 사용해야 합니다.
 
 ## 향후 개발 순서
 

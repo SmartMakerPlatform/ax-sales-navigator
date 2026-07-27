@@ -6,7 +6,7 @@
 
 ## 원칙
 
-1. 통화에 맞는 업무를 2개에서 5개 제안한다.
+1. 통화에 맞는 업무를 3개에서 4개 제안한다.
 2. 미리 정해진 업무명 목록에서 고르지 않는다. 필요한 경우 통화 맥락에 맞는 새로운 `label`을 만든다.
 3. `instruction`은 담당자가 실제 수행할 수 있을 만큼 구체적으로 작성한다.
 4. 각 업무에 제안 이유와 직접적인 통화 근거를 포함한다.
@@ -19,4 +19,4 @@
 
 ## 출력
 
-설명문이나 Markdown 없이 `RecommendedAction[]` 구조의 유효한 JSON만 반환한다. `label`, `instruction`, `reason`은 자유 문자열이며, 지정된 열거형 이외의 `executionMode`가 필요하면 `custom`을 사용한다.
+설명문이나 Markdown 없이 통화 분석 응답의 `recommendedActions` 필드에 유효한 JSON 배열을 반환한다. 별도의 모델 호출을 만들지 않는다. `label`, `instruction`, `reason`은 자유 문자열이며, 지정된 열거형 이외의 `executionMode`가 필요하면 `custom`을 사용한다.

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { AnalysisProvider, Priority, RecommendedAction } from "../../types/analysis";
+import { useEffect, useRef, useState } from "react";
+import type { Priority, RecommendedAction } from "../../types/analysis";
 import { SectionCard } from "../../components/SectionCard";
 import { ActionCard } from "./ActionCard";
 import { priorityLabel, statusLabel } from "../../utils/format";
@@ -8,7 +8,6 @@ interface Props {
   actions: RecommendedAction[];
   selected: RecommendedAction[];
   analyzed: boolean;
-  analysisProvider: AnalysisProvider;
   saved: boolean;
   onSelect: (action: RecommendedAction) => void;
   onUpdate: (action: RecommendedAction) => void;
@@ -16,35 +15,48 @@ interface Props {
   onSave: () => void;
 }
 
-export function ActionNavigation({ actions, selected, analyzed, analysisProvider, saved, onSelect, onUpdate, onAdd, onSave }: Props) {
+export function ActionNavigation({ actions, selected, analyzed, saved, onSelect, onUpdate, onAdd, onSave }: Props) {
   const [adding, setAdding] = useState(false);
+  const prepPanelRef = useRef<HTMLDivElement>(null);
+  const previousSelectedCount = useRef(selected.length);
   const remaining = actions.filter((action) => !selected.some((item) => item.id === action.id));
-  const actionsPendingIntegration = analysisProvider === "openai";
+
+  useEffect(() => {
+    if (!analyzed) setAdding(false);
+  }, [analyzed]);
+
+  useEffect(() => {
+    if (selected.length > previousSelectedCount.current) {
+      requestAnimationFrame(() => prepPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+    }
+    previousSelectedCount.current = selected.length;
+  }, [selected.length]);
 
   return (
-    <SectionCard title="업무 내비게이션" eyebrow="STEP 03" className="column-card" action={analyzed && !actionsPendingIntegration ? <span className="ai-count">샘플 업무 {actions.length}</span> : undefined}>
-      {actionsPendingIntegration ? (
-        <div className="empty-state compact integration-pending"><span>↗</span><strong>다음 단계에서 연결 예정입니다</strong><p>현재 OpenAI는 통화 분석 결과만 생성합니다. 이 영역의 추천 업무는 실제 분석 결과와 연결되지 않았으며 자동 생성·실행되지 않습니다.</p><small>Mock 분석 모드에서는 기존 샘플 업무 검토 기능을 계속 사용할 수 있습니다.</small></div>
-      ) : !analyzed ? (
+    <SectionCard title="업무 내비게이션" eyebrow="STEP 03" className="column-card" action={analyzed ? <span className="ai-count">AI 추천 {actions.length}</span> : undefined}>
+      {!analyzed ? (
         <div className="empty-state compact"><span>↗</span><strong>추천 업무를 기다리고 있어요</strong><p>분석 결과에서 업무 카드가 동적으로 만들어집니다.</p></div>
       ) : actions.length === 0 ? (
         <div className="empty-state compact no-actions"><span>0</span><strong>추천 업무가 없습니다.</strong><p>녹취록을 다시 확인하거나 직접 업무를 추가할 수 있습니다.</p><button className="select-button" onClick={() => setAdding(true)}>직접 업무 추가</button></div>
       ) : (
-        <div className={`action-list ${actions.length >= 8 ? "many" : ""}`}>
-          {remaining.map((action) => <ActionCard key={action.id} action={action} onSelect={() => onSelect(action)} />)}
-          {remaining.length === 0 && <p className="all-selected">모든 AI 추천 업무가 실행 준비 목록으로 이동했습니다.</p>}
-        </div>
+        <>
+          <div className="action-section-head"><span>AI가 제안한 다음 업무</span><small>필요한 업무만 내 목록에 추가하세요.</small></div>
+          <div className={`action-list ${actions.length >= 8 ? "many" : ""}`}>
+            {remaining.map((action) => <ActionCard key={action.id} action={action} onSelect={() => onSelect(action)} />)}
+            {remaining.length === 0 && <p className="all-selected">모든 AI 추천 업무가 내 업무 목록으로 이동했습니다.</p>}
+          </div>
+        </>
       )}
 
-      {analyzed && !actionsPendingIntegration && <div className="manual-add-bar"><span>샘플 업무에 빠진 항목이 있나요?</span><button onClick={() => setAdding(!adding)}>{adding ? "입력 닫기" : "+ 사용자 업무 추가"}</button></div>}
-      {adding && !actionsPendingIntegration && <ManualActionForm onAdd={(action) => { onAdd(action); setAdding(false); }} />}
+      {analyzed && <div className="manual-add-bar"><span>AI 추천에 빠진 업무가 있나요?</span><button onClick={() => setAdding(!adding)}>{adding ? "입력 닫기" : "+ 사용자 업무 추가"}</button></div>}
+      {adding && analyzed && <ManualActionForm onAdd={(action) => { onAdd(action); setAdding(false); }} />}
 
-      {!actionsPendingIntegration && selected.length > 0 && <div className="prep-panel">
-        <div className="prep-head"><div><span>실행 준비 및 평가 목록</span><h3>{selected.length}개의 업무를 검토 중</h3></div><span className="human-badge">사람의 승인 필요</span></div>
+      {selected.length > 0 && <div className="prep-panel" ref={prepPanelRef} aria-live="polite">
+        <div className="prep-head"><div><span>내 업무 목록</span><h3>{selected.length}개의 업무를 검토 중</h3></div><span className="human-badge">사람의 승인 필요</span></div>
         {selected.map((action) => <ActionEditor key={action.id} action={action} onUpdate={onUpdate} />)}
-        <button className="save-button" onClick={onSave}>{saved ? "✓ 검토 결과 저장 완료" : "현재 검토 결과 LocalStorage에 저장"}</button>
+        <button className="save-button" onClick={onSave}>{saved ? "✓ 이 브라우저에 저장됨" : "현재 검토 결과를 이 브라우저에 저장"}</button>
       </div>}
-      {!actionsPendingIntegration && selected.some((item) => item.status === "approved") && <div className="approved-nav"><span>승인된 업무 바로가기</span><div>{selected.filter((item) => item.status === "approved").map((item) => <button key={item.id}>{item.label}</button>)}</div></div>}
+      {selected.some((item) => item.status === "approved") && <div className="approved-nav"><span>승인된 업무 바로가기</span><div>{selected.filter((item) => item.status === "approved").map((item) => <button key={item.id}>{item.label}</button>)}</div></div>}
     </SectionCard>
   );
 }

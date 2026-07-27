@@ -70,6 +70,7 @@ export interface CallAnalysisResult {
   promises: PromiseItem[];
   itemsToVerify: AnalysisItem[];
   salesStage: SalesStageAnalysis;
+  recommendedActions: RecommendedAction[];
   warnings: string[];
   analyzedAt: string;
   provider: AnalysisProvider;

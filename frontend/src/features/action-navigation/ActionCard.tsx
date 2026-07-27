@@ -18,7 +18,7 @@ export function ActionCard({ action, onSelect }: { action: RecommendedAction; on
         {!!action.requiredInputs?.length && <div><b>필요 자료</b><ul>{action.requiredInputs.map((item) => <li key={item}>{item}</li>)}</ul></div>}
         {action.expectedOutcome && <div><b>예상 결과</b><p>{action.expectedOutcome}</p></div>}
       </div>}
-      <div className="card-actions"><button className="secondary-button" onClick={() => setExpanded(!expanded)}>{expanded ? "상세 닫기" : "상세 보기"}</button><button className="select-button" onClick={onSelect}>+ 실행 준비에 추가</button></div>
+      <div className="card-actions"><button className="secondary-button" onClick={() => setExpanded(!expanded)}>{expanded ? "상세 닫기" : "상세 보기"}</button><button className="select-button" onClick={onSelect}>+ 업무 추가</button></div>
     </article>
   );
 }

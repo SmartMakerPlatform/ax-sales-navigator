@@ -30,8 +30,11 @@
 - 중요하지만 없거나 불확실한 정보는 `itemsToVerify`에 넣는다.
 - 모든 `evidence.quote`는 녹취록에 실제로 존재하는 짧은 원문이어야 한다.
 - 녹취 정보가 부족하면 영업 단계는 `unknown`으로 판단한다.
-- 제안서·견적서 작성, 이메일 발송, 일정 등록 등의 다음 업무는 생성하지 않는다.
+- `recommendedActions`에는 통화 내용에 맞는 다음 업무를 3개에서 4개 제안한다.
+- 업무명은 고정 목록에서 고르지 않으며, 담당자가 수행할 수 있는 구체적인 지시·이유·원문 근거를 함께 작성한다.
+- 명시된 기한은 `dueDate`에 기록하고, 기한이 없으면 `suggestedTiming`으로 권장 시점을 제안한다.
+- 사용자의 승인 전에는 발송·등록·제출이 완료된 것처럼 표현하지 않는다.
 
 ## 출력
 
-설명문이나 Markdown 없이 서버가 전달한 Structured Outputs JSON Schema를 따른다. `recommendedActions`는 분석 계약에 포함하지 않는다.
+설명문이나 Markdown 없이 서버가 전달한 Structured Outputs JSON Schema를 따른다. 통화 분석과 `recommendedActions`를 한 번의 응답에 함께 포함한다.

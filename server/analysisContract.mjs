@@ -14,6 +14,8 @@ export const salesStageLabels = Object.freeze({
 const stageCodes = new Set(Object.keys(salesStageLabels));
 const speakers = new Set(["salesperson", "customer", "unknown"]);
 const owners = new Set(["salesperson", "customer", "unknown"]);
+const priorities = new Set(["high", "medium", "low"]);
+const executionModes = new Set(["manual", "draft", "schedule", "record", "research", "custom"]);
 
 export class AnalysisError extends Error {
   constructor(status, code, message, cause) {
@@ -43,6 +45,41 @@ const analysisItemSchema = {
     confidence: { type: "number", minimum: 0, maximum: 1 },
   },
   required: ["text", "evidence", "confidence"],
+};
+
+const recommendedActionSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    label: { type: "string", minLength: 1, maxLength: 100 },
+    instruction: { type: "string", minLength: 1, maxLength: 500 },
+    reason: { type: "string", minLength: 1, maxLength: 300 },
+    priority: { type: "string", enum: [...priorities] },
+    dueDate: { type: ["string", "null"] },
+    suggestedTiming: { type: ["string", "null"] },
+    evidence: { type: "array", minItems: 1, maxItems: 3, items: evidenceSchema },
+    requiredInputs: {
+      type: "array",
+      maxItems: 8,
+      items: { type: "string", minLength: 1, maxLength: 120 },
+    },
+    expectedOutcome: { type: "string", minLength: 1, maxLength: 300 },
+    executionMode: { type: "string", enum: [...executionModes] },
+    confidence: { type: "number", minimum: 0, maximum: 1 },
+  },
+  required: [
+    "label",
+    "instruction",
+    "reason",
+    "priority",
+    "dueDate",
+    "suggestedTiming",
+    "evidence",
+    "requiredInputs",
+    "expectedOutcome",
+    "executionMode",
+    "confidence",
+  ],
 };
 
 export const callAnalysisJsonSchema = {
@@ -80,6 +117,12 @@ export const callAnalysisJsonSchema = {
       },
     },
     itemsToVerify: { type: "array", items: analysisItemSchema },
+    recommendedActions: {
+      type: "array",
+      minItems: 3,
+      maxItems: 4,
+      items: recommendedActionSchema,
+    },
     warnings: { type: "array", items: { type: "string", minLength: 1 } },
   },
   required: [
@@ -89,6 +132,7 @@ export const callAnalysisJsonSchema = {
     "objections",
     "promises",
     "itemsToVerify",
+    "recommendedActions",
     "warnings",
   ],
 };
@@ -152,6 +196,57 @@ function sanitizeAnalysisItems(value, transcript, name) {
   });
 }
 
+function sanitizeRecommendedActions(value, transcript) {
+  if (!Array.isArray(value) || value.length < 3 || value.length > 4) {
+    throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무는 3개에서 4개여야 합니다.");
+  }
+  return value.map((entry, index) => {
+    const item = requireObject(entry, "recommendedActions");
+    const label = cleanString(item.label);
+    const instruction = cleanString(item.instruction);
+    const reason = cleanString(item.reason);
+    const expectedOutcome = cleanString(item.expectedOutcome);
+    const suggestedTiming = cleanString(item.suggestedTiming) || null;
+    if (!label || !instruction || !reason || !expectedOutcome) {
+      throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 필수 문구가 비어 있습니다.");
+    }
+    if (!priorities.has(item.priority) || !executionModes.has(item.executionMode) || !validConfidence(item.confidence)) {
+      throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 우선순위, 실행 방식 또는 신뢰도가 올바르지 않습니다.");
+    }
+    if (item.dueDate !== null && typeof item.dueDate !== "string") {
+      throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 기한 값이 올바르지 않습니다.");
+    }
+    const dueDate = cleanString(item.dueDate) || null;
+    if (!dueDate && !suggestedTiming) {
+      throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 실행 시점을 확인할 수 없습니다.");
+    }
+    if (!Array.isArray(item.requiredInputs)) {
+      throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 필요 자료 구조가 올바르지 않습니다.");
+    }
+    const evidence = sanitizeEvidence(item.evidence, transcript);
+    if (evidence.length === 0) {
+      throw new AnalysisError(502, "ANALYSIS_INVALID_OUTPUT", "추천 업무의 녹취 근거를 확인할 수 없습니다.");
+    }
+    return {
+      id: `action-${index + 1}`,
+      label,
+      instruction,
+      reason,
+      priority: item.priority,
+      dueDate,
+      suggestedTiming,
+      evidence,
+      requiredInputs: item.requiredInputs.map(cleanString).filter(Boolean),
+      expectedOutcome,
+      executionMode: item.executionMode,
+      confidence: item.confidence,
+      status: "suggested",
+      source: "ai",
+      isModified: false,
+    };
+  });
+}
+
 export function validateAndNormalizeAnalysis(value, transcript) {
   const raw = requireObject(value, "root");
   const salesStage = requireObject(raw.salesStage, "salesStage");
@@ -194,6 +289,7 @@ export function validateAndNormalizeAnalysis(value, transcript) {
     objections: sanitizeAnalysisItems(raw.objections, transcript, "objections"),
     promises,
     itemsToVerify: sanitizeAnalysisItems(raw.itemsToVerify, transcript, "itemsToVerify"),
+    recommendedActions: sanitizeRecommendedActions(raw.recommendedActions, transcript),
     warnings: raw.warnings.map(cleanString).filter(Boolean),
   };
 }

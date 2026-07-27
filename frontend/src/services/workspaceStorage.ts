@@ -2,7 +2,7 @@ import type { CallAnalysisResult, RecommendedAction } from "../types/analysis";
 import type { TranscriptState } from "../types/transcript";
 
 const KEY = "ax-sales-navigator:workspace";
-const VERSION = 3;
+const VERSION = 4;
 
 export interface SavedWorkspace {
   version: number;
