@@ -4,7 +4,7 @@
 
 ## 현재 프로토타입 범위
 
-React + TypeScript + Vite 프론트엔드, 8개 Mock 통화 분석 대조군, 동적 업무 카드, 실행 준비 편집, 승인·보류·거절, 사용자 업무 추가, LocalStorage 저장을 포함합니다. 실제 음성 인식, LLM, 백엔드, 외부 시스템 실행은 포함하지 않습니다.
+React + TypeScript + Vite 프론트엔드, Google Cloud Speech-to-Text V2 전사, OpenAI 기반 통화 분석, 8개 Mock 대조군, 동적 샘플 업무 카드, 실행 준비 편집, 승인·보류·거절, LocalStorage 저장을 포함합니다. 실제 OpenAI 연결 범위는 `STEP 02 · 분석 결과`이며 `STEP 03 · 업무 내비게이션`은 다음 개발 단계로 분리되어 있습니다.
 
 ## 실행
 
@@ -34,7 +34,7 @@ npm run preview
 https://smartmakerplatform.github.io/ax-sales-navigator/
 ```
 
-GitHub Pages는 정적 화면을 제공하고 실제 Google Speech-to-Text 요청은 Cloud Run 중계 API가 처리한다. 저장소의 Actions 변수 `TRANSCRIPTION_API_BASE_URL`에 Cloud Run 서비스 URL을 설정하면 Pages 빌드가 실제 STT 모드로 전환된다. URL을 설정하기 전에는 Mock 전사로 안전하게 배포된다. 통화 분석은 아직 Mock 서비스를 사용한다. 배포 절차는 `docs/cloud-run-deployment.md`를 참고한다.
+GitHub Pages는 정적 화면을 제공하고 실제 Google Speech-to-Text 및 OpenAI 요청은 Cloud Run API가 처리한다. 저장소의 Actions 변수 `TRANSCRIPTION_API_BASE_URL`과 `ANALYSIS_API_BASE_URL`에 같은 Cloud Run 서비스 URL을 설정하면 각각 실제 STT와 실제 분석 모드로 전환된다. 각 URL이 비어 있으면 해당 기능은 Mock 모드로 빌드된다. 배포 절차는 `docs/cloud-run-deployment.md`를 참고한다.
 
 ## Google Cloud Speech-to-Text V2 전사
 
@@ -51,6 +51,13 @@ GOOGLE_CLOUD_LOCATION=global
 GOOGLE_SPEECH_LANGUAGE=ko-KR
 GOOGLE_SPEECH_MODEL=long
 TRANSCRIPTION_RELAY_PORT=8787
+OPENAI_API_KEY=your-server-only-key
+OPENAI_ANALYSIS_MODEL=gpt-5-mini
+OPENAI_ANALYSIS_TIMEOUT_MS=45000
+ANALYSIS_MIN_TRANSCRIPT_LENGTH=20
+ANALYSIS_MAX_TRANSCRIPT_LENGTH=30000
+ANALYSIS_RATE_LIMIT_MAX=5
+ANALYSIS_RATE_LIMIT_WINDOW_MS=60000
 ```
 
 Google Cloud 프로젝트에서 Speech-to-Text API를 활성화하고 로컬 Application Default Credentials를 준비한다. 인증 파일이나 키는 `frontend`와 `VITE_` 환경변수에 넣지 않는다.
@@ -70,6 +77,19 @@ npm.cmd run dev
 
 중계 서버는 60초 이하·10MB 이하 M4A, MP3, WAV 파일만 받고 Google Speech-to-Text V2 동기 `Recognize`를 호출한다. Google 응답은 서버에서 공통 `TranscriptionResult`로 변환되며 기존 녹취록 textarea에 표시된다.
 
+## OpenAI 통화 분석
+
+실제 분석을 사용하려면 서버의 `OPENAI_API_KEY`를 Cloud Run Secret Manager 또는 로컬 `server/.env`로 주입하고 프론트엔드를 다음과 같이 설정한다.
+
+```text
+VITE_ANALYSIS_PROVIDER=openai
+VITE_ANALYSIS_API_BASE_URL=https://your-cloud-run-service.run.app
+```
+
+분석 버튼은 파일명이나 시나리오 ID가 아니라 사용자가 마지막으로 수정한 textarea의 녹취록만 `POST /api/analyses`로 보낸다. 서버는 공식 OpenAI JavaScript SDK의 Responses API와 Structured Outputs JSON Schema를 사용하고, 공통 `CallAnalysisResult`로 변환한 뒤 영역 2에 표시한다. 근거 발언은 기본 접힘 상태의 `근거 보기`에서 확인할 수 있다.
+
+API 키는 서버 전용 변수다. `frontend/.env`, `VITE_` 변수, GitHub Actions의 Pages 빌드 변수, 저장소 파일에 넣지 않는다. 자세한 흐름과 개인정보 주의사항은 `docs/analysis-flow.md`를 참고한다.
+
 프로덕션 형태의 로컬 실행은 먼저 `npm run build` 후 `npm start`를 사용한다. 이때 중계 서버가 `frontend/dist`와 `/api/transcriptions`를 같은 출처에서 제공한다.
 
 ## 샘플 사용
@@ -87,11 +107,11 @@ Mock 모드에서는 실제 음성을 전송하거나 분석하지 않습니다.
 
 ## 서비스 구조
 
-UI는 `SalesAnalysisService` 인터페이스만 사용합니다. 기본값은 `MockSalesAnalysisService`이며 `frontend/.env`에 `VITE_ANALYSIS_PROVIDER=api`를 설정하면 `ApiSalesAnalysisService`가 선택됩니다. API 계약은 `docs/api-contract.md`에 있습니다.
+UI는 `SalesAnalysisService` 인터페이스만 사용합니다. 기본값은 `MockSalesAnalysisService`이며 `frontend/.env`에 `VITE_ANALYSIS_PROVIDER=openai`를 설정하면 `OpenAISalesAnalysisService`가 선택됩니다. 이 서비스는 OpenAI 전용 응답을 직접 처리하지 않고 Cloud Run의 공통 분석 계약만 사용합니다.
 
 음성에서 녹취 결과를 만드는 단계는 별도의 `TranscriptionService` 인터페이스로 분리되어 있습니다. `VITE_TRANSCRIPTION_PROVIDER=mock`이면 기존 `MockTranscriptionService`, `google`이면 `GoogleTranscriptionService`를 사용합니다. Google 인증과 공급자 원본 응답은 `server/` 중계 계층에만 존재합니다.
 
-추천 업무명은 컴포넌트에 고정되어 있지 않습니다. `CallAnalysisResult.recommendedActions` 배열의 자유 문자열 `label`, `instruction`, `reason`을 공통 카드가 렌더링합니다.
+Mock 분석 모드의 추천 업무명은 컴포넌트에 고정되어 있지 않습니다. 샘플 데이터의 자유 문자열 `label`, `instruction`, `reason`을 공통 카드가 렌더링합니다. OpenAI 실제 분석 결과에는 추천 업무가 포함되지 않으며 영역 3은 `다음 단계에서 연결 예정`으로 표시됩니다.
 
 ## 저장 데이터
 
@@ -99,7 +119,7 @@ UI는 `SalesAnalysisService` 인터페이스만 사용합니다. 기본값은 `M
 
 ## 현재 구현하지 않은 기능
 
-실제 STT/LLM 호출, FastAPI, 서버 데이터베이스, 로그인·권한, 이메일 발송, 캘린더 등록, 제안서 자동 생성, 고객별 통화 이력은 구현하지 않았습니다.
+OpenAI 기반 다음 업무 생성·실행, FastAPI, 서버 데이터베이스, 로그인·권한, 이메일 발송, 캘린더 등록, 제안서 자동 생성, 고객별 통화 이력은 구현하지 않았습니다. OpenAI API 키가 없는 환경에서는 실제 분석 성공 호출을 검증할 수 없으며 Mock 분석을 사용해야 합니다.
 
 ## 향후 개발 순서
 

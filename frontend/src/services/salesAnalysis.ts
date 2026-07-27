@@ -3,7 +3,7 @@ import type { CallAnalysisResult, Scenario } from "../types/analysis";
 import { normalizeAnalysisResult } from "../utils/analysis";
 
 export interface SalesAnalysisService {
-  analyzeCall(input: { audioFile?: File; transcript: string; scenarioId?: string }): Promise<CallAnalysisResult>;
+  analyzeCall(input: { transcript: string }): Promise<CallAnalysisResult>;
 }
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -23,11 +23,24 @@ export const resolveMockScenario = (file?: File, scenarioId?: string): Scenario 
   return successScenarios[hash % successScenarios.length];
 };
 
+const transcriptTokens = (value: string) =>
+  new Set(value.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter((item) => item.length >= 2));
+
+const resolveMockAnalysisScenario = (transcript: string) => {
+  const inputTokens = transcriptTokens(transcript);
+  return successScenarios
+    .map((scenario) => ({
+      scenario,
+      score: [...transcriptTokens(scenario.transcript)].filter((token) => inputTokens.has(token)).length,
+    }))
+    .sort((left, right) => right.score - left.score)[0]?.scenario ?? successScenarios[0];
+};
+
 export class MockSalesAnalysisService implements SalesAnalysisService {
-  async analyzeCall(input: { audioFile?: File; transcript: string; scenarioId?: string }) {
+  async analyzeCall(input: { transcript: string }) {
     await new Promise((resolve) => window.setTimeout(resolve, 1300));
     if (!input.transcript.trim()) throw new Error("분석할 녹취록을 입력해 주세요.");
-    const scenario = resolveMockScenario(input.audioFile, input.scenarioId);
+    const scenario = resolveMockAnalysisScenario(input.transcript);
     if (scenario.mockBehavior === "failure") {
       throw new Error("통화 분석 중 오류가 발생했습니다. 녹취록을 확인한 후 다시 시도해 주세요.");
     }
@@ -39,18 +52,54 @@ export class MockSalesAnalysisService implements SalesAnalysisService {
   }
 }
 
-export class ApiSalesAnalysisService implements SalesAnalysisService {
-  async analyzeCall(input: { audioFile?: File; transcript: string }) {
-    const form = new FormData();
-    if (input.audioFile) form.append("audio", input.audioFile);
-    form.append("transcript", input.transcript);
-    const response = await fetch("/api/calls/analyze", { method: "POST", body: form });
-    if (!response.ok) throw new Error("통화 분석 요청에 실패했습니다.");
-    return response.json() as Promise<CallAnalysisResult>;
+interface AnalysisErrorResponse {
+  code?: string;
+  message?: string;
+}
+
+function isCallAnalysisResult(value: unknown): value is CallAnalysisResult {
+  if (!value || typeof value !== "object") return false;
+  const result = value as Partial<CallAnalysisResult>;
+  return (
+    typeof result.analysisId === "string"
+    && typeof result.summary === "string"
+    && result.provider === "openai"
+    && typeof result.model === "string"
+    && Array.isArray(result.customerNeeds)
+    && Array.isArray(result.objections)
+    && Array.isArray(result.promises)
+    && Array.isArray(result.itemsToVerify)
+    && Array.isArray(result.warnings)
+  );
+}
+
+export class OpenAISalesAnalysisService implements SalesAnalysisService {
+  async analyzeCall(input: { transcript: string }) {
+    const apiBaseUrl = (import.meta.env.VITE_ANALYSIS_API_BASE_URL ?? "")
+      .trim()
+      .replace(/\/+$/, "");
+    const response = await fetch(`${apiBaseUrl}/api/analyses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript: input.transcript }),
+    });
+    const payload: unknown = await response.json().catch(() => undefined);
+    if (!response.ok) {
+      const error = payload as AnalysisErrorResponse | undefined;
+      throw new Error(error?.message || "AI 분석 서비스에 연결하지 못했습니다.");
+    }
+    if (!isCallAnalysisResult(payload)) {
+      throw new Error("분석 서버가 올바르지 않은 결과를 반환했습니다.");
+    }
+    return normalizeAnalysisResult(payload);
   }
 }
 
+export type AnalysisProvider = "mock" | "openai";
+export const analysisProvider: AnalysisProvider =
+  ["openai", "api"].includes(import.meta.env.VITE_ANALYSIS_PROVIDER ?? "") ? "openai" : "mock";
+
 export const analysisService: SalesAnalysisService =
-  import.meta.env.VITE_ANALYSIS_PROVIDER === "api"
-    ? new ApiSalesAnalysisService()
+  analysisProvider === "openai"
+    ? new OpenAISalesAnalysisService()
     : new MockSalesAnalysisService();

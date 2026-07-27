@@ -1,4 +1,4 @@
-# 통화 분석 프롬프트 초안
+# OpenAI 통화 분석 프롬프트
 
 ## 역할
 
@@ -23,6 +23,15 @@
 - 주체가 불명확하면 `unknown`을 사용한다.
 - 날짜가 명시되지 않았으면 `dueDate`는 `null`로 둔다.
 
+## 추가 원칙
+
+- `customerNeeds`에는 고객이 명시적으로 밝힌 요구만 넣는다.
+- `objections`에는 우려, 거절, 내부 제약을 넣는다.
+- 중요하지만 없거나 불확실한 정보는 `itemsToVerify`에 넣는다.
+- 모든 `evidence.quote`는 녹취록에 실제로 존재하는 짧은 원문이어야 한다.
+- 녹취 정보가 부족하면 영업 단계는 `unknown`으로 판단한다.
+- 제안서·견적서 작성, 이메일 발송, 일정 등록 등의 다음 업무는 생성하지 않는다.
+
 ## 출력
 
-설명문이나 Markdown 없이 `CallAnalysisResult` 계약을 따르는 유효한 JSON만 반환한다. 아직 다음 업무를 생성하지 않는 단계라면 `recommendedActions`는 빈 배열로 둔다.
+설명문이나 Markdown 없이 서버가 전달한 Structured Outputs JSON Schema를 따른다. `recommendedActions`는 분석 계약에 포함하지 않는다.

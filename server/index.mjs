@@ -6,6 +6,10 @@ import { parseBuffer } from "music-metadata";
 import { normalizeAudioForTranscription } from "./audioNormalization.mjs";
 import { createCorsMiddleware } from "./cors.mjs";
 import { transcribeWithGoogle } from "./googleSpeechV2.mjs";
+import { createAnalysisHandler } from "./analysisHandler.mjs";
+import { AnalysisError } from "./analysisContract.mjs";
+import { createOpenAIAnalysisService } from "./openAIAnalysis.mjs";
+import { createFixedWindowRateLimiter } from "./rateLimit.mjs";
 
 if (typeof process.loadEnvFile === "function") {
   try {
@@ -16,6 +20,7 @@ if (typeof process.loadEnvFile === "function") {
 }
 
 const app = express();
+app.set("trust proxy", 1);
 const port = Number(process.env.PORT || process.env.TRANSCRIPTION_RELAY_PORT || 8787);
 const maxAudioBytes = 10_000_000;
 const maxAudioSeconds = 60;
@@ -26,6 +31,7 @@ const upload = multer({
 });
 
 app.use(createCorsMiddleware(process.env.ALLOWED_ORIGINS));
+app.use(express.json({ limit: "64kb" }));
 
 class HttpError extends Error {
   constructor(status, code, message) {
@@ -66,8 +72,18 @@ async function validateDuration(file) {
   }
 }
 
+const openAIAnalysisService = createOpenAIAnalysisService();
+const analysisRateLimiter = createFixedWindowRateLimiter({
+  maxRequests: Number(process.env.ANALYSIS_RATE_LIMIT_MAX ?? 5),
+  windowMs: Number(process.env.ANALYSIS_RATE_LIMIT_WINDOW_MS ?? 60_000),
+});
+
 app.get("/api/health", (_request, response) => {
-  response.json({ status: "ok", transcriptionProvider: "google-v2" });
+  response.json({
+    status: "ok",
+    transcriptionProvider: "google-v2",
+    analysisProvider: process.env.OPENAI_API_KEY ? "openai" : "not-configured",
+  });
 });
 
 app.post("/api/transcriptions", upload.single("audio"), async (request, response, next) => {
@@ -101,6 +117,10 @@ app.post("/api/transcriptions", upload.single("audio"), async (request, response
   }
 });
 
+app.post("/api/analyses", analysisRateLimiter, createAnalysisHandler({
+  analyze: (transcript) => openAIAnalysisService.analyze(transcript),
+}));
+
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const frontendDist = path.resolve(currentDirectory, "../frontend/dist");
 app.use(express.static(frontendDist));
@@ -119,6 +139,17 @@ app.use((error, _request, response, _next) => {
 
   if (error instanceof HttpError) {
     response.status(error.status).json({ code: error.code, message: error.message });
+    return;
+  }
+  if (error instanceof AnalysisError) {
+    response.status(error.status).json({ code: error.code, message: error.message });
+    return;
+  }
+  if (error instanceof SyntaxError && "body" in error) {
+    response.status(400).json({
+      code: "INVALID_JSON",
+      message: "분석 요청 형식을 확인해 주세요.",
+    });
     return;
   }
 

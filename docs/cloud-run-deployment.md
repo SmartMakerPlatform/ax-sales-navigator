@@ -1,12 +1,13 @@
-# Cloud Run 실제 STT 배포
+# Cloud Run 실제 STT·OpenAI 분석 배포
 
-GitHub Pages는 React 정적 화면을 제공하고, Cloud Run은 Google Speech-to-Text V2 중계 API를 제공한다.
+GitHub Pages는 React 정적 화면을 제공하고, Cloud Run은 Google Speech-to-Text V2와 OpenAI 분석 중계 API를 제공한다.
 
 ```text
 GitHub Pages
   → POST {Cloud Run URL}/api/transcriptions
   → Cloud Run 서비스 계정
   → Google Cloud Speech-to-Text V2
+  → OpenAI Responses API
 ```
 
 ## 1. Cloud Run 최초 서비스 생성
@@ -39,7 +40,13 @@ GOOGLE_SPEECH_LANGUAGE=ko-KR
 GOOGLE_SPEECH_MODEL=long
 GOOGLE_SPEECH_TIMEOUT_MS=45000
 ALLOWED_ORIGINS=https://smartmakerplatform.github.io
+OPENAI_ANALYSIS_MODEL=gpt-5-mini
+OPENAI_ANALYSIS_TIMEOUT_MS=45000
+ANALYSIS_MIN_TRANSCRIPT_LENGTH=20
+ANALYSIS_MAX_TRANSCRIPT_LENGTH=30000
 ```
+
+`OPENAI_API_KEY`는 일반 환경변수나 저장소 파일 대신 Secret Manager의 보안 비밀로 만들고 Cloud Run 런타임 변수에 연결한다.
 
 배포 후 다음 주소가 JSON을 반환하는지 확인한다.
 
@@ -55,9 +62,10 @@ GitHub 저장소에서 `Settings → Secrets and variables → Actions → Varia
 
 ```text
 TRANSCRIPTION_API_BASE_URL=https://{cloud-run-service-url}
+ANALYSIS_API_BASE_URL=https://{cloud-run-service-url}
 ```
 
-`Deploy GitHub Pages` workflow를 다시 실행하면 배포본이 `google` 전사 모드로 빌드된다. 브라우저에 Google 전용 응답이나 인증정보는 노출되지 않는다.
+`Deploy GitHub Pages` workflow를 다시 실행하면 배포본이 `google` 전사 및 `openai` 분석 모드로 빌드된다. 브라우저에 공급자 원본 응답이나 인증정보는 노출되지 않는다.
 
 ## 3. Cloud Run 자동 배포
 
@@ -78,5 +86,6 @@ Cloud Build 트리거가 만들어진 뒤에는 `main` 브랜치 push마다 컨�
 
 - 최대 인스턴스를 3으로 제한한다.
 - Speech-to-Text 할당량과 결제 예산 알림을 설정한다.
+- OpenAI 프로젝트의 사용 한도와 예산 알림을 설정한다.
 - 오디오 제한은 60초, 10MB로 유지한다.
 - 외부 공개 범위가 커지면 사용자 인증 또는 API Gateway를 추가한다.

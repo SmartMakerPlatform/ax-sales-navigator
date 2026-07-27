@@ -3,10 +3,10 @@ import { InputPanel } from "./features/audio-upload/InputPanel";
 import { AnalysisPanel } from "./features/call-analysis/AnalysisPanel";
 import { ActionNavigation } from "./features/action-navigation/ActionNavigation";
 import { scenarios } from "./mocks/scenarios";
-import { analysisService } from "./services/salesAnalysis";
+import { analysisProvider, analysisService } from "./services/salesAnalysis";
 import { transcriptionProvider, transcriptionService } from "./services/transcription";
 import { loadWorkspace, saveWorkspace } from "./services/workspaceStorage";
-import { normalizeAnalysisResult } from "./utils/analysis";
+import { normalizeAnalysisResult, normalizeRecommendedActions } from "./utils/analysis";
 import type { CallAnalysisResult, RecommendedAction } from "./types/analysis";
 import type { TranscriptState } from "./types/transcript";
 import "./styles.css";
@@ -27,9 +27,15 @@ export default function App() {
   const [transcript, setTranscript] = useState<TranscriptState>(restored?.transcript ?? mockTranscript(initialScenario.transcript));
   const [file, setFile] = useState<File>();
   const [result, setResult] = useState<CallAnalysisResult | undefined>(
-    restored?.result ? normalizeAnalysisResult(restored.result) : undefined,
+    restored?.result && normalizeAnalysisResult(restored.result).provider === analysisProvider
+      ? normalizeAnalysisResult(restored.result)
+      : undefined,
   );
-  const [selected, setSelected] = useState<RecommendedAction[]>(restored?.actions ?? []);
+  const [selected, setSelected] = useState<RecommendedAction[]>(
+    restored?.result && normalizeAnalysisResult(restored.result).provider === analysisProvider
+      ? restored.actions
+      : [],
+  );
   const [loading, setLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string>();
   const [saved, setSaved] = useState(Boolean(restored));
@@ -45,6 +51,12 @@ export default function App() {
         ? `실제 STT · ${file.name}`
         : `파일 매핑 · ${scenario.title}`
     : `샘플 · ${scenario.title}`;
+  const mockResultScenario = result?.provider === "mock"
+    ? scenarios.find((item) => item.result.analysisId === result.analysisId) ?? scenario
+    : undefined;
+  const recommendedActions = mockResultScenario && result
+    ? normalizeRecommendedActions(mockResultScenario.result.recommendedActions)
+    : [];
 
   const clearAnalysis = () => {
     setResult(undefined);
@@ -119,13 +131,23 @@ export default function App() {
   };
 
   const analyze = async () => {
+    const normalizedTranscript = transcript.value.trim();
+    if (!normalizedTranscript) {
+      setAnalysisError("분석할 녹취록을 입력해 주세요.");
+      return;
+    }
+    if (normalizedTranscript.length < 20) {
+      setAnalysisError("녹취록이 너무 짧아 통화 내용을 분석하기 어렵습니다.");
+      return;
+    }
+    if (loading) return;
     setLoading(true);
     setAnalysisError(undefined);
     setResult(undefined);
     setSaved(false);
     setSelected([]);
     try {
-      setResult(await analysisService.analyzeCall({ audioFile: file, transcript: transcript.value, scenarioId }));
+      setResult(await analysisService.analyzeCall({ transcript: transcript.value }));
     } catch (err) {
       setAnalysisError(err instanceof Error ? err.message : "통화 분석 중 오류가 발생했습니다. 녹취록을 확인한 후 다시 시도해 주세요.");
     } finally {
@@ -154,17 +176,18 @@ export default function App() {
     transcriptSource: transcript.source,
     transcriptionStatus: transcript.status,
     transcriptEdited: transcript.isEdited ? "yes" : "no",
-    recommended: result?.recommendedActions.length ?? 0,
+    analysisProvider,
+    recommended: recommendedActions.length,
     approved: selected.filter((item) => item.status === "approved").length,
     rejected: selected.filter((item) => item.status === "rejected").length,
     userAdded: selected.filter((item) => item.source === "user").length,
-  }), [scenario.title, file, transcript, result, selected]);
+  }), [scenario.title, file, transcript, result, recommendedActions.length, selected]);
 
   return (
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#"><span>AX</span><div><strong>Sales Navigator</strong><small>AI-assisted workflow</small></div></a>
-        <div className="prototype"><span /> {transcriptionProvider === "google" ? "GOOGLE STT V2" : "MOCK PROTOTYPE"}</div>
+        <div className="prototype"><span /> {analysisProvider === "openai" ? "OPENAI ANALYSIS" : transcriptionProvider === "google" ? "GOOGLE STT V2 · MOCK ANALYSIS" : "MOCK PROTOTYPE"}</div>
       </header>
       <main>
         <div className="hero">
@@ -175,8 +198,8 @@ export default function App() {
         <div className="context-banner"><span>현재 분석 대상</span><strong>{sourceLabel}</strong>{file && <small>{transcriptionProvider === "google" ? "선택한 음성을 Google Cloud Speech-to-Text V2로 전사합니다." : "파일명과 파일 메타데이터를 기준으로 재현 가능한 Mock 대조군에 연결됩니다."}</small>}</div>
         <div className="workspace-grid">
           <InputPanel file={file} scenarioId={scenarioId} transcript={transcript} transcriptionProvider={transcriptionProvider} loading={loading} analyzed={!!result} error={analysisError} sourceLabel={sourceLabel} onFile={changeFile} onScenario={changeScenario} onTranscript={(value) => { setTranscript((current) => ({ ...current, value, source: "user", status: "ready", isEdited: true, updatedAt: new Date().toISOString(), error: undefined })); setSaved(false); }} onAnalyze={analyze} onReset={reset} />
-          <AnalysisPanel result={result} loading={loading} error={analysisError} onRetry={analyze} />
-          <ActionNavigation actions={result?.recommendedActions ?? []} selected={selected} analyzed={!!result} saved={saved} onSelect={selectAction} onUpdate={updateAction} onAdd={addAction} onSave={save} />
+          <AnalysisPanel result={result} loading={loading} error={analysisError} provider={analysisProvider} onRetry={analyze} />
+          <ActionNavigation actions={recommendedActions} selected={selected} analyzed={!!result} analysisProvider={analysisProvider} saved={saved} onSelect={selectAction} onUpdate={updateAction} onAdd={addAction} onSave={save} />
         </div>
         <details className="diagnostics">
           <summary>개발용 데이터 진단</summary>
