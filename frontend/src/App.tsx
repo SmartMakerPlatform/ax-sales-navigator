@@ -168,8 +168,8 @@ export default function App() {
       </header>
       <main>
         <div className="hero">
-          <div><span className="hero-kicker">CALL INTELLIGENCE WORKSPACE</span><h1>통화가 끝나면,<br /><em>다음 업무가 선명해집니다.</em></h1></div>
-          <p>영업 통화를 구조화하고, 사람이 검토할 수 있는 실행 업무로 전환합니다. AI는 제안하고, 최종 결정은 담당자가 내립니다.</p>
+          <div><span className="hero-kicker">CALL INTELLIGENCE WORKSPACE</span><h1>통화가 끝나면,<br /><em>업무 분석을 요청하세요.</em></h1></div>
+          <p>AI는 실수를 할 수 있습니다. 중요한 정보는 재차 확인하세요.</p>
         </div>
         <div className="workflow-strip"><span className="active">1 <b>통화 입력</b></span><i /><span className={result || loading ? "active" : ""}>2 <b>AI 분석</b></span><i /><span className={result ? "active" : ""}>3 <b>업무 검토·승인</b></span></div>
         <div className="context-banner"><span>현재 분석 대상</span><strong>{sourceLabel}</strong>{file && <small>{transcriptionProvider === "google" ? "선택한 음성을 Google Cloud Speech-to-Text V2로 전사합니다." : "파일명과 파일 메타데이터를 기준으로 재현 가능한 Mock 대조군에 연결됩니다."}</small>}</div>
